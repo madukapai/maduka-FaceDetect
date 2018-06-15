@@ -28,10 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             this.btnStartCamera = new System.Windows.Forms.Button();
             this.picRender = new System.Windows.Forms.PictureBox();
-            this.tiCapture = new System.Windows.Forms.Timer(this.components);
             this.txtMessage = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.picRender)).BeginInit();
             this.SuspendLayout();
@@ -58,11 +56,6 @@
             this.picRender.Size = new System.Drawing.Size(970, 680);
             this.picRender.TabIndex = 2;
             this.picRender.TabStop = false;
-            // 
-            // tiCapture
-            // 
-            this.tiCapture.Interval = 1000;
-            this.tiCapture.Tick += new System.EventHandler(this.tiCapture_Tick);
             // 
             // txtMessage
             // 
@@ -94,7 +87,6 @@
         #endregion
         private System.Windows.Forms.Button btnStartCamera;
         private System.Windows.Forms.PictureBox picRender;
-        private System.Windows.Forms.Timer tiCapture;
         private System.Windows.Forms.TextBox txtMessage;
     }
 }

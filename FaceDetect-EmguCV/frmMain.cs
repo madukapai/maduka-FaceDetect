@@ -15,13 +15,15 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.UI;
 using Emgu.CV.Cuda;
+using System.Threading;
 
 namespace FaceDetect_EmguCV
 {
     public partial class frmMain : Form
     {
         bool blCameraOpen = false;
-        WebCam oWebCam;
+        VideoCapture objVideoCapture = new VideoCapture();
+        Mat objMat = new Mat();
 
         public frmMain()
         {
@@ -30,8 +32,8 @@ namespace FaceDetect_EmguCV
 
         private void frmMain_Load(object sender, EventArgs e)
         {
-            oWebCam = new WebCam();
-            oWebCam.Container = picRender;
+            objVideoCapture = new VideoCapture(0);
+            objVideoCapture.ImageGrabbed += ProcessFrameAsync;
         }
 
         private void btnStartCamera_Click(object sender, EventArgs e)
@@ -42,65 +44,94 @@ namespace FaceDetect_EmguCV
             {
                 // 啟動照相機
                 btnStartCamera.Text = "Stop";
-                oWebCam.Container.Height = picRender.Height;
-                oWebCam.Container.Width = picRender.Width;
-                oWebCam.OpenConnection();
-                tiCapture.Enabled = true;
+                objVideoCapture.Start();
             }
             else
             {
                 // 停止照相機
                 btnStartCamera.Text = "Start";
-                oWebCam.Dispose();
-                tiCapture.Enabled = false;
+                objVideoCapture.Stop();
             }
         }
 
-        private void tiCapture_Tick(object sender, EventArgs e)
+        /// <summary>
+        /// 處理影格的動作
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ProcessFrameAsync(object sender, EventArgs e)
         {
-            // 截取畫面
-            string strFileName = Application.StartupPath + @"\images\" + DateTime.Now.ToString("yyyyMMddHHmmss") + ".jpg";
-            Image objImage = oWebCam.CaptureImage();
-            objImage.Save(strFileName);
+            try
+            {
+                // 從OpenCV取得影像，並辨識人臉的存在
+                objVideoCapture.Retrieve(objMat, 0);
+                OpenCVResult result = this.CaptureFace(objMat);
 
-            Bitmap objBmp = new Bitmap(objImage);
-            this.CaptureFace(strFileName);
+                // 在影像上進行框線的繪圖
+                for (int f = 0; f < result.faces.Count; f++)
+                    CvInvoke.Rectangle(objMat, result.faces[f], new Emgu.CV.Structure.Bgr(Color.Red).MCvScalar, 2);
+
+                for (int y = 0; y < result.eyes.Count; y++)
+                    CvInvoke.Rectangle(objMat, result.eyes[y], new Emgu.CV.Structure.Bgr(Color.Yellow).MCvScalar, 1);
+
+                // 將圖片放到PictureBox之中
+                picRender.Image = objMat.Bitmap;
+                System.Threading.Thread.Sleep(5);
+                objVideoCapture.Dispose();
+            }
+            catch(Exception ex)
+            {
+                string strMsg = ex.Message;
+                txtMessage.Text = strMsg;
+            }
         }
 
-        private void CaptureFace(string strFileName)
+        /// <summary>
+        /// 透過OpenCV進行人臉是否存在的辨識
+        /// </summary>
+        /// <param name="objMat"></param>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        private OpenCVResult CaptureFace(Mat objMat)
         {
-            /*
-            Image<Gray, byte> depthImage = new Image<Gray, byte>(objBmp);
-            // depthImage.Bytes = objImage;
-            IImage image = new Mat();
-            CvInvoke.BitwiseNot(depthImage, image);
-            */
-
-            IImage image;
-
-            //Read the files as an 8-bit Bgr image  
-            image = new UMat(strFileName, ImreadModes.Color); //UMat version
-
-            //image = new Mat(strFileName, ImreadModes.Color); //CPU version
-
             long detectionTime;
             List<Rectangle> faces = new List<Rectangle>();
             List<Rectangle> eyes = new List<Rectangle>();
 
             DetectFace.Detect(
-              image, "haarcascade_frontalface_default.xml", "haarcascade_eye.xml",
+              objMat, "haarcascade_frontalface_default.xml", "haarcascade_eye.xml",
               faces, eyes,
               out detectionTime);
 
-            txtMessage.Text = "";
-            txtMessage.Text += JsonConvert.SerializeObject(faces);
-            txtMessage.Text += JsonConvert.SerializeObject(eyes);
+            // 重新計算比例
+            decimal diWidth = decimal.Parse(picRender.Width.ToString()) / decimal.Parse(objMat.Bitmap.Width.ToString());
+            decimal diHeight = decimal.Parse(picRender.Height.ToString()) / decimal.Parse(objMat.Bitmap.Height.ToString());
 
-            // 刪除檔案
-            File.Delete(strFileName);
+            List<Rectangle> objDraw = new List<Rectangle>();
 
-            // 繪製框線
-            // transparentControl1.DrawRectangle(faces);
+            for (int i = 0; i < faces.Count; i++)
+            {
+                objDraw.Add(new Rectangle(
+                    (int)(faces[i].X * diWidth),
+                    (int)(faces[i].Y * diHeight),
+                    (int)(faces[i].Width * diWidth),
+                    (int)(faces[i].Height * diHeight)
+                    ));
+            }
+
+            OpenCVResult result = new OpenCVResult()
+            {
+                eyes = eyes,
+                faces = faces,
+            };
+
+            return result;
+        }
+
+        public class OpenCVResult
+        {
+            public List<Rectangle> faces { get; set; }
+            public List<Rectangle> eyes { get; set; }
         }
     }
 }
