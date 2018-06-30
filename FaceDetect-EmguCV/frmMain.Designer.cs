@@ -28,9 +28,11 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.btnStartCamera = new System.Windows.Forms.Button();
             this.picRender = new System.Windows.Forms.PictureBox();
             this.txtMessage = new System.Windows.Forms.TextBox();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.picRender)).BeginInit();
             this.SuspendLayout();
             // 
@@ -51,6 +53,7 @@
             this.picRender.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.picRender.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.picRender.Location = new System.Drawing.Point(12, 12);
             this.picRender.Name = "picRender";
             this.picRender.Size = new System.Drawing.Size(970, 680);
@@ -66,6 +69,12 @@
             this.txtMessage.Name = "txtMessage";
             this.txtMessage.Size = new System.Drawing.Size(255, 680);
             this.txtMessage.TabIndex = 4;
+            // 
+            // timer1
+            // 
+            this.timer1.Enabled = true;
+            this.timer1.Interval = 1000;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // frmMain
             // 
@@ -88,6 +97,7 @@
         private System.Windows.Forms.Button btnStartCamera;
         private System.Windows.Forms.PictureBox picRender;
         private System.Windows.Forms.TextBox txtMessage;
+        private System.Windows.Forms.Timer timer1;
     }
 }
 

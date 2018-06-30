@@ -1,29 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.IO;
-using Newtonsoft.Json;
-
-using Emgu.CV;
-using Emgu.CV.CvEnum;
+﻿using Emgu.CV;
 using Emgu.CV.Structure;
-using Emgu.CV.UI;
-using Emgu.CV.Cuda;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Threading;
+using System.Windows.Forms;
 
 namespace FaceDetect_EmguCV
 {
     public partial class frmMain : Form
     {
         bool blCameraOpen = false;
-        VideoCapture objVideoCapture = new VideoCapture();
-        Mat objMat = new Mat();
+        VideoCapture objVideoCapture;
+        Mat objMat;
 
         public frmMain()
         {
@@ -32,6 +21,7 @@ namespace FaceDetect_EmguCV
 
         private void frmMain_Load(object sender, EventArgs e)
         {
+            timer1.Enabled = false;
             objVideoCapture = new VideoCapture(0);
             objVideoCapture.ImageGrabbed += ProcessFrameAsync;
         }
@@ -42,6 +32,7 @@ namespace FaceDetect_EmguCV
 
             if (blCameraOpen)
             {
+                objMat = new Mat();
                 // 啟動照相機
                 btnStartCamera.Text = "Stop";
                 objVideoCapture.Start();
@@ -64,20 +55,22 @@ namespace FaceDetect_EmguCV
             try
             {
                 // 從OpenCV取得影像，並辨識人臉的存在
-                objVideoCapture.Retrieve(objMat, 0);
+                objVideoCapture.Retrieve(objMat);
                 OpenCVResult result = this.CaptureFace(objMat);
 
                 // 在影像上進行框線的繪圖
                 for (int f = 0; f < result.faces.Count; f++)
-                    CvInvoke.Rectangle(objMat, result.faces[f], new Emgu.CV.Structure.Bgr(Color.Red).MCvScalar, 2);
+                    CvInvoke.Rectangle(objMat, result.faces[f], new Bgr(Color.Red).MCvScalar, 2);
 
                 for (int y = 0; y < result.eyes.Count; y++)
-                    CvInvoke.Rectangle(objMat, result.eyes[y], new Emgu.CV.Structure.Bgr(Color.Yellow).MCvScalar, 1);
+                    CvInvoke.Rectangle(objMat, result.eyes[y], new Bgr(Color.Yellow).MCvScalar, 1);
 
                 // 將圖片放到PictureBox之中
-                picRender.Image = objMat.Bitmap;
-                System.Threading.Thread.Sleep(5);
-                objVideoCapture.Dispose();
+                if (picRender.Image != null)
+                    picRender.Image.Dispose();
+                picRender.Image = Image.FromHbitmap(objMat.Bitmap.GetHbitmap());
+
+                Thread.Sleep(5);
             }
             catch(Exception ex)
             {
@@ -132,6 +125,42 @@ namespace FaceDetect_EmguCV
         {
             public List<Rectangle> faces { get; set; }
             public List<Rectangle> eyes { get; set; }
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            objMat = new Mat();
+            #region // 使用本地端Cam
+            objVideoCapture = new VideoCapture(0);
+            objVideoCapture.Retrieve(objMat);
+            #endregion
+
+            #region // 使用IPCam
+            //System.Net.WebRequest request = System.Net.WebRequest.Create("http://192.168.100.16/image/jpeg.cgi");
+            //request.Credentials = new System.Net.NetworkCredential("facedetect", "facedetect");
+            //System.Net.WebResponse response = request.GetResponse();
+            //System.IO.Stream responseStream = response.GetResponseStream();
+            //Bitmap bitmap2 = new Bitmap(responseStream);
+            //Image<Bgr, Byte> imageCV = new Image<Bgr, byte>(bitmap2); //Image Class from Emgu.CV
+            //objMat = imageCV.Mat;
+            #endregion
+
+            if (objMat.Bitmap != null)
+            {
+                OpenCVResult result = this.CaptureFace(objMat);
+
+                // 在影像上進行框線的繪圖
+                for (int f = 0; f < result.faces.Count; f++)
+                    CvInvoke.Rectangle(objMat, result.faces[f], new Bgr(Color.Red).MCvScalar, 2);
+
+                for (int y = 0; y < result.eyes.Count; y++)
+                    CvInvoke.Rectangle(objMat, result.eyes[y], new Bgr(Color.Yellow).MCvScalar, 1);
+
+                // 將圖片放到PictureBox之中
+                if (picRender.Image != null)
+                    picRender.Image.Dispose();
+                picRender.Image = Image.FromHbitmap(objMat.Bitmap.GetHbitmap());
+            }
         }
     }
 }
