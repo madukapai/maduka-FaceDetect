@@ -92,9 +92,9 @@ namespace FaceDetect_EmguCV
             List<Rectangle> eyes = new List<Rectangle>();
 
             DetectFace.Detect(
-              objMat, "haarcascade_frontalface_default.xml", "haarcascade_eye.xml",
-              faces, eyes,
-              out detectionTime);
+                objMat, "haarcascade_frontalface_default.xml", "haarcascade_eye.xml",
+                faces, eyes,
+                out detectionTime);
 
             // 重新計算比例
             decimal diWidth = decimal.Parse(picRender.Width.ToString()) / decimal.Parse(objMat.Bitmap.Width.ToString());
@@ -127,6 +127,11 @@ namespace FaceDetect_EmguCV
             public List<Rectangle> eyes { get; set; }
         }
 
+        /// <summary>
+        /// 使用固定秒數後，取得Cam的影像圖片，並使用圖片進行人臉辨識
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void timer1_Tick(object sender, EventArgs e)
         {
             objMat = new Mat();
